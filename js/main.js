@@ -18,23 +18,34 @@ const restaurants = document.querySelector('.restaurants');
 const menu = document.querySelector('.menu');
 const logo = document.querySelector('.logo');
 
+const urlRest = './db/partners.json';
+
 
 
 // Authorize module
 let login = '' || localStorage.getItem('deliveryFood');
 
-function toggleModal() {
-  modal.classList.toggle("is-open");
-}
+const getData = async function(url) {
+    const response = await fetch(url);
+    
+    if(!response.ok) {
+      throw new Error('URL is missed');
+    }
 
-function toggleModalAuth() {
-  modalAuth.classList.toggle('is-open');
-}
+  const data = await response.json();
+  return data;
+};
 
-function authorized(){
+
+
+const toggleModal = () => modal.classList.toggle("is-open");
+
+const toggleModalAuth = () => modalAuth.classList.toggle('is-open');
+
+const authorized = () => {
   console.log('Authorised');
   
-  function logOut(){
+  const logOut = () => {
     login = null;
     localStorage.removeItem('deliveryFood');
     buttonAuth.style.display = '';
@@ -43,7 +54,7 @@ function authorized(){
     buttonOut.removeEventListener('click', logOut);
     
     checkAuth();
-  }
+  };
 
   userName.textContent = login;
   buttonAuth.style.display = 'none';
@@ -51,18 +62,14 @@ function authorized(){
   buttonOut.style.display = 'block';
 
   buttonOut.addEventListener('click', logOut);
-}
+};
 
 
-// function maskInput(string) {
-//   return !!string.trim();
-// }
 
-
-function notAuthorized(){
+const notAuthorized = () => {
   console.log('Not authorised');
 
-  function logIn(event){
+  const logIn = event => {
     event.preventDefault();
     
     if(loginInput.value.trim() && password.value.trim()) {
@@ -89,7 +96,7 @@ function notAuthorized(){
   loginForm.addEventListener('submit', logIn)
 }
 
-function checkAuth(){
+const checkAuth = () => {
   if (login) {
     authorized();
   } else {
@@ -99,21 +106,32 @@ function checkAuth(){
 
 // Resturants' cards
 
-function createCardRestaurant(){
+const createCardRestaurant = restaurant => {
+  
+  const { 
+    name, 
+    time_of_delivery: deliveryTime, 
+    stars, 
+    price,
+    kitchen,
+    image,
+    products 
+  } = restaurant;
+  
   const cardRestaurant = 
-    `<a class="card card-restaurant">
-              <img src="img/pizza-plus/preview.jpg" alt="image" class="card-image" />
+    `<a class="card card-restaurant" data-products="${products}">
+              <img src="${image}" alt="${name}" class="card-image" />
               <div class="card-text">
                 <div class="card-heading">
-                  <h3 class="card-title">Пицца плюс</h3>
-                  <span class="card-tag tag">50 мин</span>
+                  <h3 class="card-title">${name}</h3>
+                  <span class="card-tag tag">${deliveryTime} мин</span>
                 </div>
                 <div class="card-info">
                   <div class="rating">
-                    4.5
+                    ${stars}
                   </div>
-                  <div class="price">От 900 ₽</div>
-                  <div class="category">Пицца</div>
+                  <div class="price">От ${price} грн</div>
+                  <div class="category">${kitchen}</div>
                 </div>
               </div>
             </a>`;
@@ -123,18 +141,26 @@ function createCardRestaurant(){
 
 
 
-function createCardDish() {
+const createCardDish = dish => {
+
+  const {
+    id,
+    name,
+    description,
+    price,
+    image
+  } = dish;
+  
+  
   const cardDish =  `
         <div class="card">
-            <img src="img/pizza-plus/pizza-classic.jpg" alt="image" class="card-image" />
+            <img src="${image}" alt="${name}" class="card-image" />
 						<div class="card-text">
 							<div class="card-heading">
-								<h3 class="card-title card-title-reg">Пицца Классика</h3>
+								<h3 class="card-title card-title-reg">${name}</h3>
 							</div>
 							<div class="card-info">
-								<div class="ingredients">Соус томатный, сыр «Моцарелла», сыр «Пармезан», ветчина,
-									салями,
-									грибы.
+								<div class="ingredients">${description}
 								</div>
 							</div>
 							<div class="card-buttons">
@@ -142,7 +168,7 @@ function createCardDish() {
 									<span class="button-card-text">В корзину</span>
 									<span class="button-cart-svg"></span>
 								</button>
-								<strong class="card-price-bold">510 ₽</strong>
+								<strong class="card-price-bold">${price} грн</strong>
 							</div>
 						</div>
         </div>				
@@ -153,29 +179,26 @@ function createCardDish() {
 
 
 
-function openDishes(event){
+const openDishes = event => {
   
     const target = event.target;
     const restaurant = target.closest('.card-restaurant');
 
-    if (restaurant) {
-
-      if (login) {
+    if(login) {
       cardsMenu.textContent = '';
       containerPromo.classList.add('hide');
       restaurants.classList.add('hide');
       menu.classList.remove('hide');
 
-      createCardDish();
-      createCardDish();
-      createCardDish();
-      } else {
+      getData(`./db/${restaurant.dataset.products}`)
+        .then(data => 
+          data.forEach(createCardDish));
+    } else {
         toggleModalAuth();
       }
     }
     
-}
-function closeDishes(event){
+const closeDishes = event => {
     
     containerPromo.classList.remove('hide');
     restaurants.classList.remove('hide');
@@ -183,24 +206,27 @@ function closeDishes(event){
     
 }
 
+ function init() {
+    getData(urlRest)
+      .then( data => 
+        data.forEach(createCardRestaurant));
 
-cartButton.addEventListener("click", toggleModal);
-closeButton.addEventListener("click", toggleModal);
+    cartButton.addEventListener("click", toggleModal);
+    closeButton.addEventListener("click", toggleModal);
 
-cardsRestaurants.addEventListener('click', openDishes);
-logo.addEventListener('click', closeDishes);
+    cardsRestaurants.addEventListener('click', openDishes);
+    logo.addEventListener('click', closeDishes);
 
 
-checkAuth();
+    checkAuth();
 
-createCardRestaurant();
-createCardRestaurant();
-createCardRestaurant();
+    new Swiper('.swiper-container', {
+      loop: true,
+      autoplay: {
+        delay: 5000,
+      },
+      slidesPerView: 1,
+    });
+};
 
-new Swiper('.swiper-container', {
-  loop: true,
-  autoplay: {
-    delay: 5000,
-  },
-  slidesPerView: 1,
-});
+init();
