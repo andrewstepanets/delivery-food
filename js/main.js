@@ -97,8 +97,6 @@ function checkAuth(){
   }
 }
 
-checkAuth();
-
 // Resturants' cards
 
 function createCardRestaurant(){
@@ -123,9 +121,7 @@ function createCardRestaurant(){
     cardsRestaurants.insertAdjacentHTML('beforeend', cardRestaurant);
 }
 
-createCardRestaurant();
-createCardRestaurant();
-createCardRestaurant();
+
 
 function createCardDish() {
   const cardDish =  `
@@ -159,12 +155,12 @@ function createCardDish() {
 
 function openDishes(event){
   
-  if (!login) {
-    toggleModalAuth();
-  } else {
     const target = event.target;
+    const restaurant = target.closest('.card-restaurant');
 
-    if (target.closest('.card-restaurant')) {
+    if (restaurant) {
+
+      if (login) {
       cardsMenu.textContent = '';
       containerPromo.classList.add('hide');
       restaurants.classList.add('hide');
@@ -173,8 +169,10 @@ function openDishes(event){
       createCardDish();
       createCardDish();
       createCardDish();
+      } else {
+        toggleModalAuth();
+      }
     }
-  }
     
 }
 function closeDishes(event){
@@ -191,3 +189,18 @@ closeButton.addEventListener("click", toggleModal);
 
 cardsRestaurants.addEventListener('click', openDishes);
 logo.addEventListener('click', closeDishes);
+
+
+checkAuth();
+
+createCardRestaurant();
+createCardRestaurant();
+createCardRestaurant();
+
+new Swiper('.swiper-container', {
+  loop: true,
+  autoplay: {
+    delay: 5000,
+  },
+  slidesPerView: 1,
+});
