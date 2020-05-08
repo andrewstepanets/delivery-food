@@ -18,7 +18,13 @@ const restaurants = document.querySelector('.restaurants');
 const menu = document.querySelector('.menu');
 const logo = document.querySelector('.logo');
 
+const totalTagPrice = document.querySelector('.modal-pricetag');
+const modalBody = document.querySelector('.modal-body');
+const cancelCartButton = document.querySelector('.clear-cart');
+
 const urlRest = './db/partners.json';
+
+const cartItems =[];
 
 
 
@@ -51,15 +57,17 @@ const authorized = () => {
     buttonAuth.style.display = '';
     userName.style.display = '';
     buttonOut.style.display = '';
+    cartButton.style.display = '';
     buttonOut.removeEventListener('click', logOut);
     
     checkAuth();
   };
-
+  
   userName.textContent = login;
   buttonAuth.style.display = 'none';
   userName.style.display = 'inline';
-  buttonOut.style.display = 'block';
+  buttonOut.style.display = 'flex';
+  cartButton.style.display = 'flex';
 
   buttonOut.addEventListener('click', logOut);
 };
@@ -164,11 +172,11 @@ const createCardDish = dish => {
 								</div>
 							</div>
 							<div class="card-buttons">
-								<button class="button button-primary button-add-cart">
+								<button class="button button-primary button-add-cart" data-name="${name}" data-price="${price}" data-id="${id}">
 									<span class="button-card-text">В корзину</span>
 									<span class="button-cart-svg"></span>
 								</button>
-								<strong class="card-price-bold">${price} грн</strong>
+								<strong class="card-price card-price-bold">${price} грн</strong>
 							</div>
 						</div>
         </div>				
@@ -206,13 +214,90 @@ const closeDishes = event => {
     
 }
 
- function init() {
+function addItemsToCart(event) {
+  const target = event.target;
+  const buttonAddItemsToCart = target.closest('.button-add-cart');
+  
+  if(buttonAddItemsToCart) {
+    const title = buttonAddItemsToCart.dataset.name;
+    const price = parseInt(buttonAddItemsToCart.dataset.price);
+    const id = buttonAddItemsToCart.dataset.id;
+
+    const nameItem = cartItems.find(item => item.id === id);
+
+   if(nameItem) {
+     nameItem.count +=1;
+   } else {
+     cartItems.push({
+       id,
+       title,
+       price,
+       count: 1,
+     });
+   } 
+  }
+}
+
+function renderCart(){
+    modalBody.textContent = '';
+
+  cartItems.forEach(({ id, title, price, count }) => {
+        const cartItem = `
+          <div class="food-row">
+            <span class="food-name">${title}</span>
+            <strong class="food-price">${price} грн</strong>
+            <div class="food-counter">
+              <button class="counter-button counter-minus" data-id="${id}">-</button>
+              <span class="counter">${count}</span>
+              <button class="counter-button counter-plus" data-id="${id}">+</button>
+            </div>
+          </div>
+        `;
+        modalBody.insertAdjacentHTML('afterbegin', cartItem);
+      });
+
+      const totalPrice = cartItems.reduce(function(result, item) {
+          return result + item.price * item.count;
+      }, 0);
+
+      totalTagPrice.textContent = `${totalPrice} грн`;
+        
+}
+
+function changeCount(event) {
+  const target = event.target;
+
+  if (target.classList.contains('counter-button')) {
+    const dish = cartItems.find(item => item.id === target.dataset.id);
+    
+    target.classList.contains('counter-minus') && dish.count--;
+    if(dish.count === 0) cartItems.splice(cartItems.indexOf(dish), 1);
+    target.classList.contains('counter-plus') && dish.count++;
+
+    renderCart();
+  }
+}
+
+function init() {
     getData(urlRest)
       .then( data => 
         data.forEach(createCardRestaurant));
 
-    cartButton.addEventListener("click", toggleModal);
-    closeButton.addEventListener("click", toggleModal);
+    cartButton.addEventListener('click', function(){
+      renderCart();
+      toggleModal();
+    });
+
+
+    cancelCartButton.addEventListener('click', () => {
+      cartItems.length = 0;
+      renderCart();
+    })
+    
+    modalBody.addEventListener('click', changeCount);
+    
+    cardsMenu.addEventListener('click', addItemsToCart);
+    closeButton.addEventListener('click', toggleModal);
 
     cardsRestaurants.addEventListener('click', openDishes);
     logo.addEventListener('click', closeDishes);
